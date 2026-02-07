@@ -32,6 +32,6 @@ These modules are provided through the Python PyQt6 (or PyQt5 / PySide depending
 ### 1️⃣ Clone the repository
 
 ```bash
-git clone https://github.com/TUO-USERNAME/pico-browser.git
-cd pico-browser
+git clone https://github.com/alexvozza2012-droid/Picobrowser.git
+
 
