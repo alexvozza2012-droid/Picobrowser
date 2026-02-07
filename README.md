@@ -36,4 +36,4 @@ git clone https://github.com/TUO-USERNAME/pico-browser.git
 cd pico-browser
 
 
-Translated with DeepL.com (free version)
+
