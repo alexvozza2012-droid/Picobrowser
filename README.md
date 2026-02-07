@@ -2,7 +2,7 @@
 
 Pico Browser is a lightweight web browser written in Python using QtWidgets and QtWebEngine.  
 The project is designed to be simple, fast and easily modifiable, and can be launched either from the terminal or as a normal programme without a terminal.
-
+## <img width="1920" height="1080" alt="pico screenshot" src="https://github.com/user-attachments/assets/fef6326a-b291-4b4e-9753-cac57db66683" />
 ---
 
 ## ✨ Features
@@ -35,10 +35,3 @@ These modules are provided through the Python PyQt6 (or PyQt5 / PySide depending
 git clone https://github.com/TUO-USERNAME/pico-browser.git
 cd pico-browser
 
-
-
-
-
-
-
-<img width="1920" height="1080" alt="pico screenshot" src="https://github.com/user-attachments/assets/fef6326a-b291-4b4e-9753-cac57db66683" />
