@@ -17,14 +17,16 @@ The project is designed to be simple, fast and easily modifiable, and can be lau
 
 ## 📦 Requirements
 
-Pico Browser is developed using Qt and requires:
+Pico Browser is developed using Qt5 and requires:
 
 - Python 3
 - QtWidgets (for the graphical interface)
 - QtWebEngine (for rendering web pages)
 
 These modules are provided through the Python PyQt6 (or PyQt5 / PySide depending on the version used) libraries.
-
+ ________________________________________________________
+(sudo apt install python3-pyqt5 python3-pyqt5.qtwebengine)
+ ________________________________________________________
 ---
 
 ## 🔧 Installation
