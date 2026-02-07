@@ -26,11 +26,16 @@ Pico Browser is developed using Qt5 and requires:
 These modules are provided through the Python PyQt5 or PySide (depending on the version used) libraries.
 
 
-Command for install:
 
- ________________________________________________________
-(sudo apt install python3-pyqt5 python3-pyqt5.qtwebengine)
- ________________________________________________________
+
+ ____________________________________________________________
+
+ Command for install:
+
+
+
+ ## sudo apt install python3-pyqt5 python3-pyqt5.qtwebengine
+ ____________________________________________________________
 ---
 
 ## 🔧 Installation
