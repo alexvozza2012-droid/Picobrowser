@@ -34,12 +34,11 @@ These modules are provided through the Python PyQt6 (or PyQt5 / PySide depending
 ```bash
 git clone https://github.com/TUO-USERNAME/pico-browser.git
 cd pico-browser
-## 📸 Pico Browser Preview
-
-![Preview](Picobrowser/pico screenshot.png)
 
 
 
 
 
 
+
+<img width="1920" height="1080" alt="pico screenshot" src="https://github.com/user-attachments/assets/fef6326a-b291-4b4e-9753-cac57db66683" />
