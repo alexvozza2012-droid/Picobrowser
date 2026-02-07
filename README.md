@@ -10,7 +10,7 @@ The project is designed to be simple, fast and easily modifiable, and can be lau
 - Graphical interface based on QtWidgets
 - Web page rendering with QtWebEngine
 - Lightweight and minimal browser
-- Can be launched directly from the application menu, desktop or XFCE panel
+- Can be launched directly from the application menu, desktop or panel
 - Open source project
 
 ---
