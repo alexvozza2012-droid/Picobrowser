@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name=Pico Browser
-Comment=Browser leggero basato su Python e Qt
-Exec=/home/alex/Picobrowser-main/picobrowser.py
-Icon=/home/alex/Picobrowser-main/icon.png
-Terminal=false
-Type=Application
-Categories=Network;WebBrowser;
