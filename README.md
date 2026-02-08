@@ -34,8 +34,8 @@ These modules are provided through the Python PyQt5 or PySide (depending on the 
  Command for install:
 
 
-
- ## sudo apt install python3-pyqt5 python3-pyqt5.qtwebengine
+ ```bash
+ sudo apt install python3-pyqt5 python3-pyqt5.qtwebengine
  ____________________________________________________________
 ---
 
