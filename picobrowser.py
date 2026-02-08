@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 import sys
+import json
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QTabWidget,
-    QToolBar, QAction, QLineEdit
+    QToolBar, QAction, QLineEdit, QInputDialog,
+    QMessageBox, QFileDialog
 )
-from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile
 from PyQt5.QtCore import QUrl
+
+BOOKMARK_FILE = "bookmarks.json"
+PASSWORD_FILE = "passwords.json"
 
 class Browser(QMainWindow):
     def __init__(self):
@@ -14,16 +19,29 @@ class Browser(QMainWindow):
         self.setWindowTitle("Pico Browser")
         self.resize(1200, 750)
 
-        # ---------- TAB ----------
+        self.apply_modern_theme()
+
+        # USER AGENT + DOWNLOAD MANAGER
+        self.profile = QWebEngineProfile.defaultProfile()
+
+        self.profile.setHttpUserAgent(
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        )
+
+        # ⭐ Download collegato
+        self.profile.downloadRequested.connect(self.on_download_requested)
+
+        # TAB
         self.tabs = QTabWidget()
-        self.tabs.setDocumentMode(True)
         self.tabs.setTabsClosable(True)
         self.tabs.tabCloseRequested.connect(self.close_tab)
         self.tabs.currentChanged.connect(self.update_urlbar)
         self.setCentralWidget(self.tabs)
 
-        # ---------- TOOLBAR ----------
+        # TOOLBAR
         toolbar = QToolBar()
+        toolbar.setMovable(False)
         self.addToolBar(toolbar)
 
         back_btn = QAction("◀", self)
@@ -42,16 +60,86 @@ class Browser(QMainWindow):
         new_tab_btn.triggered.connect(lambda: self.add_tab())
         toolbar.addAction(new_tab_btn)
 
+        bookmark_btn = QAction("★", self)
+        bookmark_btn.triggered.connect(self.add_bookmark)
+        toolbar.addAction(bookmark_btn)
+
+        show_bookmarks_btn = QAction("📚", self)
+        show_bookmarks_btn.triggered.connect(self.show_bookmarks)
+        toolbar.addAction(show_bookmarks_btn)
+
+        password_btn = QAction("🔐", self)
+        password_btn.triggered.connect(self.save_password)
+        toolbar.addAction(password_btn)
+
         self.urlbar = QLineEdit()
+        self.urlbar.setPlaceholderText("Cerca o inserisci URL...")
         self.urlbar.returnPressed.connect(self.load_url)
         toolbar.addWidget(self.urlbar)
 
-        # Prima tab
         self.add_tab(QUrl("https://duckduckgo.com"))
 
-    # ---------- TAB LOGIC ----------
+    # ---------------- DOWNLOAD ----------------
+    def on_download_requested(self, download):
+
+        path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Salva file",
+            download.path()
+        )
+
+        if path:
+            download.setPath(path)
+            download.accept()
+
+            QMessageBox.information(
+                self,
+                "Download",
+                "Download avviato!"
+            )
+
+    # ---------------- TEMA ----------------
+    def apply_modern_theme(self):
+        self.setStyleSheet("""
+            QMainWindow { background: #f5f6f7; }
+
+            QToolBar {
+                background: #ffffff;
+                spacing: 6px;
+                padding: 6px;
+                border-bottom: 1px solid #ddd;
+            }
+
+            QLineEdit {
+                background: #ffffff;
+                border: 1px solid #ccc;
+                border-radius: 8px;
+                padding: 6px;
+                font-size: 14px;
+            }
+
+            QLineEdit:focus { border: 1px solid #4a90e2; }
+
+            QTabWidget::pane { border: none; background: #ffffff; }
+
+            QTabBar::tab {
+                background: #e9eaec;
+                padding: 8px 16px;
+                margin: 2px;
+                border-radius: 8px;
+            }
+
+            QTabBar::tab:selected {
+                background: #ffffff;
+                border: 1px solid #ddd;
+            }
+
+            QTabBar::tab:hover { background: #dcdcdc; }
+        """)
+
+    # ---------------- TAB ----------------
     def add_tab(self, qurl=None):
-        if qurl is None or isinstance(qurl, bool):
+        if qurl is None:
             qurl = QUrl("https://duckduckgo.com")
 
         web = QWebEngineView()
@@ -60,13 +148,9 @@ class Browser(QMainWindow):
         index = self.tabs.addTab(web, "Nuova tab")
         self.tabs.setCurrentIndex(index)
 
-        web.urlChanged.connect(
-            lambda qurl, w=web: self.update_tab_title(w, qurl)
-        )
         web.titleChanged.connect(
-            lambda title, w=web: self.tabs.setTabText(
-                self.tabs.indexOf(w), title[:20]
-            )
+            lambda title, w=web:
+            self.tabs.setTabText(self.tabs.indexOf(w), title[:20])
         )
 
     def close_tab(self, index):
@@ -76,7 +160,7 @@ class Browser(QMainWindow):
     def current_web(self):
         return self.tabs.currentWidget()
 
-    # ---------- NAVIGAZIONE ----------
+    # ---------------- NAVIGAZIONE ----------------
     def load_url(self):
         url = self.urlbar.text()
         if not url.startswith("http"):
@@ -88,11 +172,6 @@ class Browser(QMainWindow):
         if web:
             self.urlbar.setText(web.url().toString())
 
-    def update_tab_title(self, web, qurl):
-        index = self.tabs.indexOf(web)
-        if index != -1:
-            self.tabs.setTabText(index, qurl.host())
-
     def go_back(self):
         self.current_web().back()
 
@@ -102,7 +181,67 @@ class Browser(QMainWindow):
     def reload_page(self):
         self.current_web().reload()
 
-# ---------- AVVIO ----------
+    # ---------------- SEGNALIBRI ----------------
+    def add_bookmark(self):
+        url = self.current_web().url().toString()
+        title = self.current_web().title()
+
+        bookmarks = self.load_json(BOOKMARK_FILE)
+        bookmarks.append({"title": title, "url": url})
+        self.save_json(BOOKMARK_FILE, bookmarks)
+
+        QMessageBox.information(self, "Segnalibro", "Segnalibro salvato!")
+
+    def show_bookmarks(self):
+        bookmarks = self.load_json(BOOKMARK_FILE)
+
+        if not bookmarks:
+            QMessageBox.information(self, "Segnalibri", "Nessun segnalibro")
+            return
+
+        items = [b["title"] for b in bookmarks]
+        item, ok = QInputDialog.getItem(self, "Segnalibri", "Apri:", items, 0, False)
+
+        if ok:
+            for b in bookmarks:
+                if b["title"] == item:
+                    self.add_tab(QUrl(b["url"]))
+
+    # ---------------- PASSWORD ----------------
+    def save_password(self):
+        site = self.current_web().url().host()
+
+        username, ok1 = QInputDialog.getText(self, "Username", "Inserisci username:")
+        if not ok1:
+            return
+
+        password, ok2 = QInputDialog.getText(self, "Password", "Inserisci password:")
+        if not ok2:
+            return
+
+        passwords = self.load_json(PASSWORD_FILE)
+        passwords.append({
+            "site": site,
+            "username": username,
+            "password": password
+        })
+
+        self.save_json(PASSWORD_FILE, passwords)
+        QMessageBox.information(self, "Password", "Password salvata!")
+
+    # ---------------- FILE JSON ----------------
+    def load_json(self, filename):
+        try:
+            with open(filename, "r") as f:
+                return json.load(f)
+        except:
+            return []
+
+    def save_json(self, filename, data):
+        with open(filename, "w") as f:
+            json.dump(data, f, indent=4)
+
+# ---------------- AVVIO ----------------
 app = QApplication(sys.argv)
 browser = Browser()
 browser.show()
