@@ -31,7 +31,7 @@ These modules are provided through the Python PyQt5 or PySide (depending on the 
 
  ____________________________________________________________
 
- Command for install:
+ Command for install Qt5:
 
 
  ```bash
