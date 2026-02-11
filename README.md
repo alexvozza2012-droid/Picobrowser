@@ -1,4 +1,5 @@
 <img width="300" height="300" alt="piconewlogo" src="https://github.com/user-attachments/assets/8b10fce1-4f2d-4ddf-8b74-dbfb2044713c" />                                          
+
 ## 🌐 Pico Browser
 
 Pico Browser is a lightweight web browser written in Python using QtWidgets and QtWebEngine.  
