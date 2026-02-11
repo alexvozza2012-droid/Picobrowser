@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 import sys
 import json
+import os
+
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QTabWidget,
     QToolBar, QAction, QLineEdit, QInputDialog,
     QMessageBox, QFileDialog
 )
+
 from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEngineProfile
 from PyQt5.QtCore import QUrl
 
 BOOKMARK_FILE = "bookmarks.json"
-PASSWORD_FILE = "passwords.json"
+
 
 class Browser(QMainWindow):
     def __init__(self):
@@ -21,7 +24,9 @@ class Browser(QMainWindow):
 
         self.apply_modern_theme()
 
-        # USER AGENT + DOWNLOAD MANAGER
+        self.base_dir = os.path.dirname(os.path.realpath(__file__))
+
+        # USER AGENT + DOWNLOAD
         self.profile = QWebEngineProfile.defaultProfile()
 
         self.profile.setHttpUserAgent(
@@ -29,7 +34,6 @@ class Browser(QMainWindow):
             "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
 
-        # ⭐ Download collegato
         self.profile.downloadRequested.connect(self.on_download_requested)
 
         # TAB
@@ -68,16 +72,26 @@ class Browser(QMainWindow):
         show_bookmarks_btn.triggered.connect(self.show_bookmarks)
         toolbar.addAction(show_bookmarks_btn)
 
-        password_btn = QAction("🔐", self)
-        password_btn.triggered.connect(self.save_password)
-        toolbar.addAction(password_btn)
+        delete_bookmark_btn = QAction("🗑", self)
+        delete_bookmark_btn.triggered.connect(self.delete_bookmark)
+        toolbar.addAction(delete_bookmark_btn)
 
         self.urlbar = QLineEdit()
         self.urlbar.setPlaceholderText("Cerca o inserisci URL...")
         self.urlbar.returnPressed.connect(self.load_url)
         toolbar.addWidget(self.urlbar)
 
-        self.add_tab(QUrl("https://duckduckgo.com"))
+        self.add_tab()
+
+    # ---------------- NEW TAB PAGE ----------------
+    def get_new_tab_url(self):
+
+        newtab_path = os.path.join(self.base_dir, "newtab.html")
+
+        if os.path.exists(newtab_path):
+            return QUrl.fromLocalFile(newtab_path)
+
+        return QUrl("https://duckduckgo.com")
 
     # ---------------- DOWNLOAD ----------------
     def on_download_requested(self, download):
@@ -92,11 +106,7 @@ class Browser(QMainWindow):
             download.setPath(path)
             download.accept()
 
-            QMessageBox.information(
-                self,
-                "Download",
-                "Download avviato!"
-            )
+            QMessageBox.information(self, "Download", "Download avviato!")
 
     # ---------------- TEMA ----------------
     def apply_modern_theme(self):
@@ -139,8 +149,9 @@ class Browser(QMainWindow):
 
     # ---------------- TAB ----------------
     def add_tab(self, qurl=None):
+
         if qurl is None:
-            qurl = QUrl("https://duckduckgo.com")
+            qurl = self.get_new_tab_url()
 
         web = QWebEngineView()
         web.setUrl(qurl)
@@ -153,6 +164,11 @@ class Browser(QMainWindow):
             self.tabs.setTabText(self.tabs.indexOf(w), title[:20])
         )
 
+        web.urlChanged.connect(
+            lambda url, w=web:
+            self.update_urlbar(self.tabs.indexOf(w))
+        )
+
     def close_tab(self, index):
         if self.tabs.count() > 1:
             self.tabs.removeTab(index)
@@ -162,13 +178,17 @@ class Browser(QMainWindow):
 
     # ---------------- NAVIGAZIONE ----------------
     def load_url(self):
+
         url = self.urlbar.text()
+
         if not url.startswith("http"):
             url = "https://" + url
+
         self.current_web().setUrl(QUrl(url))
 
     def update_urlbar(self, index):
         web = self.tabs.widget(index)
+
         if web:
             self.urlbar.setText(web.url().toString())
 
@@ -183,6 +203,7 @@ class Browser(QMainWindow):
 
     # ---------------- SEGNALIBRI ----------------
     def add_bookmark(self):
+
         url = self.current_web().url().toString()
         title = self.current_web().title()
 
@@ -193,6 +214,7 @@ class Browser(QMainWindow):
         QMessageBox.information(self, "Segnalibro", "Segnalibro salvato!")
 
     def show_bookmarks(self):
+
         bookmarks = self.load_json(BOOKMARK_FILE)
 
         if not bookmarks:
@@ -207,29 +229,33 @@ class Browser(QMainWindow):
                 if b["title"] == item:
                     self.add_tab(QUrl(b["url"]))
 
-    # ---------------- PASSWORD ----------------
-    def save_password(self):
-        site = self.current_web().url().host()
+    # ⭐ NUOVA funzione elimina segnalibro
+    def delete_bookmark(self):
 
-        username, ok1 = QInputDialog.getText(self, "Username", "Inserisci username:")
-        if not ok1:
+        bookmarks = self.load_json(BOOKMARK_FILE)
+
+        if not bookmarks:
+            QMessageBox.information(self, "Segnalibri", "Nessun segnalibro da eliminare")
             return
 
-        password, ok2 = QInputDialog.getText(self, "Password", "Inserisci password:")
-        if not ok2:
-            return
+        items = [b["title"] for b in bookmarks]
 
-        passwords = self.load_json(PASSWORD_FILE)
-        passwords.append({
-            "site": site,
-            "username": username,
-            "password": password
-        })
+        item, ok = QInputDialog.getItem(
+            self,
+            "Elimina segnalibro",
+            "Scegli segnalibro da eliminare:",
+            items,
+            0,
+            False
+        )
 
-        self.save_json(PASSWORD_FILE, passwords)
-        QMessageBox.information(self, "Password", "Password salvata!")
+        if ok:
+            bookmarks = [b for b in bookmarks if b["title"] != item]
+            self.save_json(BOOKMARK_FILE, bookmarks)
 
-    # ---------------- FILE JSON ----------------
+            QMessageBox.information(self, "Segnalibri", "Segnalibro eliminato!")
+
+    # ---------------- JSON ----------------
     def load_json(self, filename):
         try:
             with open(filename, "r") as f:
@@ -240,6 +266,7 @@ class Browser(QMainWindow):
     def save_json(self, filename, data):
         with open(filename, "w") as f:
             json.dump(data, f, indent=4)
+
 
 # ---------------- AVVIO ----------------
 app = QApplication(sys.argv)
